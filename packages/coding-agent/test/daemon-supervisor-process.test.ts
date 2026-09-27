@@ -456,7 +456,7 @@ describe("daemon supervisor resident workers", () => {
 			fakeWorker.close();
 			rmSync(workerSocketPath, { force: true });
 		});
-		const supervisor = spawnSupervisor(agentDir, socketPath, projectDir);
+		const supervisor = spawnSupervisor(agentDir, socketPath, directory);
 		const client = await connectEventually(socketPath, supervisor);
 		let restarted: SessionSummary | undefined;
 		const deadline = Date.now() + 30_000;
@@ -475,6 +475,7 @@ describe("daemon supervisor resident workers", () => {
 		workerPids.add(restarted.workerPid);
 		// A fresh current-binary worker owns the reloaded idle session; the fake pre-roster pid is not adopted.
 		expect(restarted.workerPid).not.toBe(legacyProcess.pid);
+		expect(restarted.cwd).toBe(projectDir);
 		expect(restarted.isSessionActive).toBe(false);
 		// The seeded user message plus the harness digest injected on resume.
 		expect(restarted.messageCount).toBe(2);
@@ -917,6 +918,7 @@ describe("daemon supervisor resident workers", () => {
 		expect(listed.success).toBe(true);
 		const persistedConfig = readSupervisorConfig(agentDir);
 		expect(persistedConfig).toMatchObject({ defaultSessionConfig: { sessionDir } });
+		expect(persistedConfig.defaultSessionConfig).not.toHaveProperty("cwd");
 		expect(persistedConfig.defaultSessionConfig).not.toHaveProperty("noTools");
 		await replacementClient.request({ type: "shutdown" });
 		replacementClient.close();
@@ -969,12 +971,13 @@ describe("daemon supervisor resident workers", () => {
 		const created = await client.request({
 			type: "create",
 			sessionPath: sessionFile,
-			config: { cwd: projectDir, agentDir, sessionDir, noTools: true, noExtensions: true },
+			config: { cwd: root, agentDir, sessionDir, noTools: true, noExtensions: true },
 		});
 		if (!created.success) {
 			throw new Error(created.error);
 		}
 		const summary = requireSummary(created.data);
+		expect(summary.cwd).toBe(root);
 		if (!summary.workerPid) {
 			throw new Error("Resident worker did not expose its pid");
 		}
@@ -1254,9 +1257,9 @@ describe("daemon supervisor resident workers", () => {
 		const sessionDir = join(agentDir, "sessions");
 		const socketPath = join(tmpdir(), `prime-supervisor-smoke-${process.pid}-${randomUUID().slice(0, 8)}.sock`);
 		mkdirSync(projectDir, { recursive: true });
-		const sessionFiles = Array.from({ length: 2 }, (_, index) => {
+		const sessionFiles = Array.from({ length: 2 }, () => {
 			const manager = SessionManager.create(projectDir, sessionDir);
-			manager.appendMessage({ role: "user", content: `smoke root ${index}`, timestamp: index + 1 });
+			manager.flushNow();
 			const sessionFile = manager.getSessionFile();
 			if (!sessionFile) {
 				throw new Error("Fixture session did not persist");
@@ -1264,14 +1267,14 @@ describe("daemon supervisor resident workers", () => {
 			return sessionFile;
 		});
 
-		const supervisor = spawnSupervisor(agentDir, socketPath, projectDir);
+		const supervisor = spawnSupervisor(agentDir, socketPath, root);
 		const client = await connectEventually(socketPath, supervisor);
 		const created = await Promise.all(
 			sessionFiles.map((sessionPath) =>
 				client.request({
 					type: "create",
 					sessionPath,
-					config: { cwd: projectDir, agentDir, sessionDir, noTools: true, noExtensions: true },
+					config: { agentDir, sessionDir, noTools: true, noExtensions: true },
 				}),
 			),
 		);
@@ -1282,6 +1285,7 @@ describe("daemon supervisor resident workers", () => {
 			return requireSummary(response.data);
 		});
 		const pids = summaries.map((summary) => summary.workerPid);
+		expect(summaries.map((summary) => summary.cwd)).toEqual([projectDir, projectDir]);
 		expect(new Set(pids).size).toBe(2);
 		expect(pids).not.toContain(supervisor.pid);
 		for (const pid of pids) {
