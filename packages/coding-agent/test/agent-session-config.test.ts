@@ -26,7 +26,6 @@ describe("agent session runtime config persistence", () => {
 		});
 
 		expect(durable).toEqual({
-			cwd: "/repo",
 			agentDir: "/agent",
 			sessionDir: "/sessions",
 			telemetryDisabled: true,
