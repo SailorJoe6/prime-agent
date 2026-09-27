@@ -3608,7 +3608,7 @@ describe("daemon worker supervisor monitoring", () => {
 		}
 	});
 
-	it("merges persisted host settings into fresh runtime defaults", () => {
+	it("sanitizes legacy persisted cwd while preserving durable host settings", () => {
 		const root = mkdtempSync(join(tmpdir(), "prime-supervisor-config-merge-"));
 		const descriptorDir = join(root, "workers");
 		const socketPath = join(root, "supervisor.sock");
@@ -3639,12 +3639,20 @@ describe("daemon worker supervisor monitoring", () => {
 
 			expect(config).toMatchObject({
 				agentDir,
-				cwd: "/persisted/cwd",
+				cwd: "/fresh/cwd",
 				telemetryDisabled: true,
 				provider: "fresh-provider",
 				model: "fresh-model",
 				apiKey: "fresh-key",
 			});
+			(supervisor as unknown as { persistSupervisorConfig(): void }).persistSupervisorConfig();
+			const persisted = JSON.parse(readFileSync(join(descriptorDir, "supervisor-config"), "utf8"));
+			expect(persisted).toMatchObject({
+				version: 1,
+				socketPath,
+				defaultSessionConfig: { agentDir, telemetryDisabled: true },
+			});
+			expect(persisted.defaultSessionConfig).not.toHaveProperty("cwd");
 		} finally {
 			rmSync(root, { recursive: true, force: true });
 		}

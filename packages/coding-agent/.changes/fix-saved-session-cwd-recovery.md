@@ -1,0 +1,1 @@
+- Fixed daemon recovery so saved sessions reopen in their recorded working directory unless the caller explicitly overrides it.
