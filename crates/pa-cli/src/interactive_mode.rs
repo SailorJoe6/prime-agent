@@ -420,7 +420,16 @@ fn build_tui_options(
         Some(selector) => fork_startup_selection(selector, &config.cwd, session_dir.as_deref())?,
         None => session_selection(&options.session, session_dir.as_deref()),
     };
-    let settings = pa_core::settings::SettingsManager::create(&config.cwd, &config.agent_dir);
+    let cwd = match (&session, options.session.cwd_from_flag) {
+        (SessionSelection::Resume(path), false) => {
+            pa_core::session::manager::read_session_header(path)
+                .map(|header| PathBuf::from(header.cwd))
+                .filter(|path| path.is_dir())
+                .unwrap_or_else(|| config.cwd.clone())
+        }
+        _ => config.cwd.clone(),
+    };
+    let settings = pa_core::settings::SettingsManager::create(&cwd, &config.agent_dir);
     let code_block_indent = settings.get_code_block_indent();
     let show_images = settings.get_show_images();
     let fullscreen_mouse = settings.get_fullscreen_mouse();
@@ -435,13 +444,13 @@ fn build_tui_options(
     let catalog: Vec<pa_types::ai::Model> = registry.get_available().into_iter().cloned().collect();
     let configured_providers: std::collections::HashSet<String> =
         catalog.iter().map(|model| model.provider.clone()).collect();
-    let settings = pa_core::settings::SettingsManager::create(&config.cwd, &config.agent_dir);
+    let settings = pa_core::settings::SettingsManager::create(&cwd, &config.agent_dir);
     let recent = settings.get_recent_models();
     let default_thinking_level = settings
         .get_default_thinking_level()
         .map(|level| level.model_level().wire_name().to_string());
     let provider_auth = pa_tui::provider_auth::ProviderAuthCommandsHandle(std::sync::Arc::new(
-        crate::provider_login::ProviderAuth::new(config.cwd.clone(), config.agent_dir.clone()),
+        crate::provider_login::ProviderAuth::new(cwd.clone(), config.agent_dir.clone()),
     ));
     let (onboarding, pending_onboarding_stages) =
         onboarding_task(options, Some(provider_auth.clone()));
@@ -454,7 +463,7 @@ fn build_tui_options(
         model_recent_models: recent,
         default_thinking_level,
         socket_path,
-        cwd: config.cwd.clone(),
+        cwd: cwd.clone(),
         session_dir,
         script_path,
         // Explicit CLI model flags ride every create request; the daemon
@@ -478,7 +487,7 @@ fn build_tui_options(
         // The client-settings seam the interactive commands persist
         // through (`/settings`).
         client_settings: Some(crate::client_settings::CliClientSettings::new(
-            config.cwd.clone(),
+            cwd.clone(),
             config.agent_dir.clone(),
         )),
         version: crate::config::version().to_string(),
@@ -489,12 +498,12 @@ fn build_tui_options(
         // through the shared auth store the daemon's sessions read.
         client_auth: Some(pa_tui::client_auth::ClientAuthCommandsHandle(
             std::sync::Arc::new(crate::mcp_login::TerminalMcpAuth::new(
-                config.cwd.clone(),
+                cwd.clone(),
                 config.agent_dir.clone(),
             )),
         )),
         traces: Some(pa_tui::traces::TracesCommandsHandle(std::sync::Arc::new(
-            crate::client_traces::ClientTraces::new(config.cwd.clone(), config.agent_dir.clone()),
+            crate::client_traces::ClientTraces::new(cwd.clone(), config.agent_dir.clone()),
         ))),
         // `/update`: the same body `prime-agent update` runs, output
         // captured — the TUI stays mounted.
@@ -503,7 +512,7 @@ fn build_tui_options(
         )),
         provider_auth: Some(provider_auth),
         telemetry: Some(std::sync::Arc::new(CliInteractionTelemetry::new(
-            config.cwd.clone(),
+            cwd,
             config.agent_dir.clone(),
         ))),
         keybindings,

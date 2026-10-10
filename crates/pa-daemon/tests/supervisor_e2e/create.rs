@@ -3,7 +3,30 @@
 //! refusal.
 
 use super::*;
+use serde_json::json;
 
+#[test]
+fn issue_1124_create_uses_saved_cwd_and_explicit_override_wins() {
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let override_cwd = std::env::temp_dir();
+    let _daemon = spawn_daemon(&dir.path().join("daemon.sock"), dir.path());
+    let (mut client, _) = Client::connect(&dir.path().join("daemon.sock"));
+    for (index, config, expected) in [
+        (1, json!({}), dir.path()),
+        (2, json!({ "cwd": &override_cwd }), override_cwd.as_path()),
+    ] {
+        let file = dir.path().join(format!("saved-{index}.jsonl"));
+        let header = json!({ "type": "session", "version": 3, "id": format!("saved-{index}"),
+            "timestamp": "2026-01-01T00:00:00Z", "cwd": dir.path() });
+        std::fs::write(&file, format!("{header}\n")).expect("saved session");
+        client.send_command(
+            "create",
+            &json!({ "type": "create", "sessionPath": file, "config": config }),
+        );
+        let response = client.read_response("create");
+        assert_eq!(response["data"]["cwd"], json!(expected));
+    }
+}
 /// Explicit `--provider`/`--model` flags are authoritative for the worker's
 /// model resolution — no process-wide fallback may answer instead.
 #[test]

@@ -459,6 +459,23 @@ fn settings_sink_persists_the_fresh_home_answer_with_the_flag() {
 }
 
 #[test]
+fn issue_1124_interactive_resume_uses_saved_cwd_unless_flagged() {
+    let dir = tempfile::TempDir::new().expect("temp dir");
+    let saved = dir.path().join("saved");
+    std::fs::create_dir_all(&saved).expect("saved directory");
+    let file = seed_saved_session(&dir.path().join("sessions"), "saved", &saved);
+    for (flagged, expected) in [(false, saved.as_path()), (true, dir.path())] {
+        let mut options = run_options_for_continue(dir.path());
+        options.session.resume = Some(file.to_string_lossy().to_string());
+        options.session.cwd_from_flag = flagged;
+        let actual = build_tui_options(&options, dir.path().join("d"), std::sync::Arc::default())
+            .expect("resume options")
+            .0;
+        assert_eq!(actual.cwd, expected);
+    }
+}
+
+#[test]
 fn build_tui_options_reads_code_block_indent_settings() {
     // `markdown.codeBlockIndent` rides InteractiveOptions at startup; a non-default
     // value reaches the TUI, no setting keeps the default two spaces.

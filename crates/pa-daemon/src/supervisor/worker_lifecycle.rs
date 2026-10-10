@@ -18,6 +18,27 @@ use super::{
 use crate::lease::is_process_alive;
 use crate::protocol::{response_failure, response_success, DaemonResponse};
 
+fn create_cwd(config: Option<&Map<String, Value>>, session_path: Option<&String>) -> String {
+    config
+        .and_then(|config| config.get("cwd"))
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .or_else(|| session_path.and_then(|path| session_cwd(path)))
+        .or_else(|| {
+            std::env::current_dir()
+                .ok()
+                .map(|path| path.to_string_lossy().to_string())
+        })
+        .unwrap_or_else(|| "/".to_string())
+}
+
+fn session_cwd(session_path: &str) -> Option<String> {
+    let expanded = crate::paths::expand_tilde(session_path).ok()?;
+    let absolute = std::path::absolute(&expanded).unwrap_or(expanded);
+    let header = pa_core::session::manager::read_session_header(&absolute)?;
+    (!header.cwd.trim().is_empty()).then_some(header.cwd)
+}
+
 impl Supervisor {
     /// Complete a tombstoned stop for a worker encountered at adoption: adoption
     /// finishes the stop, never adopts the worker as healthy. The `archive_on_stop`
@@ -134,16 +155,7 @@ impl Supervisor {
             return Err(anyhow!("Supervisor is shutting down"));
         }
         let config_object = config.as_ref().and_then(Value::as_object);
-        let cwd_value = config_object
-            .and_then(|config| config.get("cwd"))
-            .and_then(Value::as_str)
-            .map(str::to_string)
-            .or_else(|| {
-                std::env::current_dir()
-                    .ok()
-                    .map(|p| p.to_string_lossy().to_string())
-            })
-            .unwrap_or_else(|| "/".to_string());
+        let cwd_value = create_cwd(config_object, session_path.as_ref());
         let session_dir = config_object
             .and_then(|config| config.get("sessionDir"))
             .and_then(Value::as_str)

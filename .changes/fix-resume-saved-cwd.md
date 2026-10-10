@@ -1,0 +1,1 @@
+- Resumed sessions now use their saved working directory unless an explicit `--cwd` override is provided ([#1124](https://github.com/PrimeIntellect-ai/prime-agent/issues/1124)).
