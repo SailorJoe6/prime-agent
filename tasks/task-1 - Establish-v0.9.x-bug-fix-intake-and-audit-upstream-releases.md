@@ -4,7 +4,7 @@ title: Establish v0.9.x bug-fix intake and audit upstream releases
 status: In Design
 assignee: []
 created_date: '2026-10-28 20:14'
-updated_date: '2026-10-28 20:23'
+updated_date: '2026-10-28 20:27'
 labels: []
 dependencies: []
 references:
@@ -25,14 +25,15 @@ Rust fixes cannot be mechanically cherry-picked into this codebase. They can rev
 
 ## Outcome
 
-Establish a durable, repeatable bug-fix intake process for the TypeScript `0.9.x` fork and use it to audit the three stable upstream Rust releases known at the audit cutoff. Produce a complete applicability ledger that identifies which upstream fixes are irrelevant, already safe, potentially applicable, or proven to require a TypeScript fix. Define how confirmed upstream-applicable and locally discovered bugs enter the next point-release queue.
+Establish a durable, repeatable bug-fix intake process for the TypeScript `0.9.x` fork and use it to audit upstream stable releases `v0.10.0`, `v0.10.1`, and `v0.10.2`. Produce a complete applicability ledger that identifies which upstream fixes are irrelevant, already safe, potentially applicable, or proven to require a TypeScript fix. Define how confirmed upstream-applicable and locally discovered bugs enter the next point-release queue.
 
 This task establishes the intake process and performs the initial audit. It does not port a candidate fix or publish a `0.9.x` release; confirmed fixes become separately reviewable bug tasks.
 
 ## Required behavior
 
-- Verify and record the exact three upstream stable release tags, peeled commits, publication dates, and audit cutoff instead of assuming their identities from conversation.
+- Verify and record upstream stable releases `v0.10.0`, `v0.10.1`, and `v0.10.2`, including their peeled commits, publication dates, and audit cutoff.
 - Inspect release notes, commits, linked issues or pull requests, and regression tests so the inventory is not limited to changelog wording.
+- Trigger recurring intake only from stable releases. Upstream `main`, nightlies, and release candidates may be inspected as supporting provenance for a stable fix but do not independently enter the ledger or release queue.
 - Record every bug fix from each release in a repository-owned ledger with its immutable upstream provenance, observable symptom, intended invariant, affected Rust subsystem, analogous TypeScript/pi surface, applicability classification, supporting evidence, and next action.
 - Use these classifications: Rust-only or architecturally irrelevant; already safe in TypeScript; potentially applicable and needing reproduction; reproduced and requiring a port; ported and verified. The initial audit may not claim the final classification unless evidence supports it.
 - For every potentially applicable fix, identify the exact TypeScript paths and a concrete reproduction or regression-test strategy. For every reproduced defect, create a separate provider-native bug task before implementation.
@@ -58,11 +59,12 @@ This task establishes the intake process and performs the initial audit. It does
 - Cutting or publishing `0.9.9`.
 - Repointing the fork default branch or rewriting existing release provenance.
 - Broad dependency upgrades, refactors, feature backports, or speculative compatibility work.
+- Treating upstream `main`, nightlies, or release candidates as independent intake releases.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The audit records the exact three upstream stable tags, peeled commits, publication dates, and a clear cutoff, with immutable references.
+- [ ] #1 The audit records stable releases `v0.10.0`, `v0.10.1`, and `v0.10.2`, their peeled commits and publication dates, and a clear cutoff, with immutable references.
 - [ ] #2 Every bug fix in those releases appears exactly once in the durable ledger and is traceable to release notes plus its strongest available commit, issue, pull-request, or regression-test evidence.
 - [ ] #3 Each ledger item states the language-independent symptom and invariant, identifies the analogous TypeScript/pi code surface, and carries one defined applicability classification with evidence.
 - [ ] #4 Rust-only and already-safe conclusions cite concrete architectural or TypeScript evidence; potentially applicable items include a reproducible investigation or regression-test strategy.
@@ -70,6 +72,6 @@ This task establishes the intake process and performs the initial audit. It does
 - [ ] #6 The documented local-defect workflow requires reproduction, root-cause evidence, a regression test proven red without the fix, the smallest stability change, focused validation, `npm run check`, and Orca compatibility verification.
 - [ ] #7 The authoritative `maint/0.9.x` branch starts at `a1faacd53ac4473a75de1d434afaf50945c2f647`, the fork remains in `0.9.x`, immutable v0.9.8 provenance is preserved, and the upstream-mirroring Rust `main` and default branch remain unchanged.
 - [ ] #8 The future point-release gate requires lockstep package versions, changelog fragments, immutable tags, rollback evidence, and explicit operator authority before publication.
-- [ ] #9 The intake can append a later upstream stable release without duplicating prior entries or automatically modifying code, automation, branches, tags, installations, or releases.
+- [ ] #9 The intake triggers only for stable upstream releases and can append a later stable release without duplicating prior entries or automatically modifying code, automation, branches, tags, installations, or releases; main, nightly, and candidate builds are supporting provenance only.
 - [ ] #10 No existing Rust maintenance automation is modified, disabled, or repurposed, and no Rust build is installed, staged, activated, or restarted.
 <!-- AC:END -->
