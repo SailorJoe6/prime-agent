@@ -4,6 +4,7 @@ title: Establish v0.9.x bug-fix intake and audit upstream releases
 status: In Design
 assignee: []
 created_date: '2026-10-28 20:14'
+updated_date: '2026-10-28 20:23'
 labels: []
 dependencies: []
 references:
@@ -36,7 +37,7 @@ This task establishes the intake process and performs the initial audit. It does
 - Use these classifications: Rust-only or architecturally irrelevant; already safe in TypeScript; potentially applicable and needing reproduction; reproduced and requiring a port; ported and verified. The initial audit may not claim the final classification unless evidence supports it.
 - For every potentially applicable fix, identify the exact TypeScript paths and a concrete reproduction or regression-test strategy. For every reproduced defect, create a separate provider-native bug task before implementation.
 - Document the same regression-first flow for defects found locally: capture reproduction and root cause, prove a focused regression test fails without the behavior, implement the smallest stability fix, run required validation, and queue it for the next `0.9.x` point release.
-- Keep the authoritative maintenance line separate from the immutable v0.9.8 release provenance and from the upstream-mirroring Rust `main`. The planned maintenance branch begins at exact commit `a1faacd53ac4473a75de1d434afaf50945c2f647`; changing the repository default branch is outside this task.
+- Keep the authoritative maintenance line on `maint/0.9.x`, created from exact commit `a1faacd53ac4473a75de1d434afaf50945c2f647`, separate from the immutable v0.9.8 release provenance and from the upstream-mirroring Rust `main`. Changing the repository default branch is outside this task.
 - Preserve lockstep package versioning, changelog-fragment rules, immutable release tags, rollback capability, and Orca compatibility gates for future point releases.
 - Make the ledger and process easy to update when another stable upstream release appears, without automatically changing code, publishing releases, or deciding applicability.
 
@@ -67,7 +68,7 @@ This task establishes the intake process and performs the initial audit. It does
 - [ ] #4 Rust-only and already-safe conclusions cite concrete architectural or TypeScript evidence; potentially applicable items include a reproducible investigation or regression-test strategy.
 - [ ] #5 Any defect proven to affect the TypeScript line has its own provider-native bug task and is not implemented as part of this audit task.
 - [ ] #6 The documented local-defect workflow requires reproduction, root-cause evidence, a regression test proven red without the fix, the smallest stability change, focused validation, `npm run check`, and Orca compatibility verification.
-- [ ] #7 The maintenance and release policy keeps the fork in `0.9.x`, starts the future maintenance line at `a1faacd53ac4473a75de1d434afaf50945c2f647`, preserves immutable v0.9.8 provenance, and leaves the upstream-mirroring Rust `main` and default branch unchanged.
+- [ ] #7 The authoritative `maint/0.9.x` branch starts at `a1faacd53ac4473a75de1d434afaf50945c2f647`, the fork remains in `0.9.x`, immutable v0.9.8 provenance is preserved, and the upstream-mirroring Rust `main` and default branch remain unchanged.
 - [ ] #8 The future point-release gate requires lockstep package versions, changelog fragments, immutable tags, rollback evidence, and explicit operator authority before publication.
 - [ ] #9 The intake can append a later upstream stable release without duplicating prior entries or automatically modifying code, automation, branches, tags, installations, or releases.
 - [ ] #10 No existing Rust maintenance automation is modified, disabled, or repurposed, and no Rust build is installed, staged, activated, or restarted.
