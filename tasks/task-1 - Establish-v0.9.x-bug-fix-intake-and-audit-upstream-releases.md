@@ -4,7 +4,7 @@ title: Establish v0.9.x bug-fix intake and audit upstream releases
 status: In Design
 assignee: []
 created_date: '2026-10-28 20:14'
-updated_date: '2026-10-28 20:27'
+updated_date: '2026-10-30 21:52'
 labels: []
 dependencies: []
 references:
@@ -34,7 +34,7 @@ This task establishes the intake process and performs the initial audit. It does
 - Verify and record upstream stable releases `v0.10.0`, `v0.10.1`, and `v0.10.2`, including their peeled commits, publication dates, and audit cutoff.
 - Inspect release notes, commits, linked issues or pull requests, and regression tests so the inventory is not limited to changelog wording.
 - Trigger recurring intake only from stable releases. Upstream `main`, nightlies, and release candidates may be inspected as supporting provenance for a stable fix but do not independently enter the ledger or release queue.
-- Record every bug fix from each release in a repository-owned ledger with its immutable upstream provenance, observable symptom, intended invariant, affected Rust subsystem, analogous TypeScript/pi surface, applicability classification, supporting evidence, and next action.
+- Record every bug fix from each release in a canonical version-controlled Markdown ledger under `docs/maintenance/`, with its immutable upstream provenance, observable symptom, intended invariant, affected Rust subsystem, analogous TypeScript/pi surface, applicability classification, supporting evidence, and next action.
 - Use these classifications: Rust-only or architecturally irrelevant; already safe in TypeScript; potentially applicable and needing reproduction; reproduced and requiring a port; ported and verified. The initial audit may not claim the final classification unless evidence supports it.
 - For every potentially applicable fix, identify the exact TypeScript paths and a concrete reproduction or regression-test strategy. For every reproduced defect, create a separate provider-native bug task before implementation.
 - Document the same regression-first flow for defects found locally: capture reproduction and root cause, prove a focused regression test fails without the behavior, implement the smallest stability fix, run required validation, and queue it for the next `0.9.x` point release.
@@ -65,7 +65,7 @@ This task establishes the intake process and performs the initial audit. It does
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 The audit records stable releases `v0.10.0`, `v0.10.1`, and `v0.10.2`, their peeled commits and publication dates, and a clear cutoff, with immutable references.
-- [ ] #2 Every bug fix in those releases appears exactly once in the durable ledger and is traceable to release notes plus its strongest available commit, issue, pull-request, or regression-test evidence.
+- [ ] #2 Every bug fix in those releases appears exactly once in a canonical version-controlled Markdown ledger under `docs/maintenance/` and is traceable to release notes plus its strongest available commit, issue, pull-request, or regression-test evidence.
 - [ ] #3 Each ledger item states the language-independent symptom and invariant, identifies the analogous TypeScript/pi code surface, and carries one defined applicability classification with evidence.
 - [ ] #4 Rust-only and already-safe conclusions cite concrete architectural or TypeScript evidence; potentially applicable items include a reproducible investigation or regression-test strategy.
 - [ ] #5 Any defect proven to affect the TypeScript line has its own provider-native bug task and is not implemented as part of this audit task.
